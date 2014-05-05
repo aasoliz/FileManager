@@ -2,3 +2,10 @@ File Manager
 
 Command Line only
 Prints Folders/Subfolder/Files to console
+
+To run:
+  gcc -g -std=c99 -c file.c
+  gcc -g -std=c99 -o file file.o
+  ./file <folder path>
+
+Make sure there is a "/" at the end of the folder path.
