@@ -6,20 +6,26 @@
 #define TRUE 1
 #define FALSE 0
 
-
-struct Link {
+struct Directory {
     char* directory;
     char* name;
     int level;
-    struct Link* next;
+    struct Directory* next;
 };
 
-typedef struct Link Node;
+typedef struct Directory Node;
 
+
+char* getBaseDirectory(char* arg);
+
+char* getBaseName(char* base);
 
 Node* listSub(struct dirent *Dir, DIR *pdir, char* dir, int level);
 
+Node* listSubb(Node* list, char* base, char* name);
+
 void dirEntries(struct dirent *Dir, DIR *pdir, Node* list);
+
 
 Node* end;
 
@@ -29,43 +35,30 @@ int main(int argc, char* argv[]) {
     DIR *pdir;
 
     if(argc < 2) {
-        printf("nothing");
+        printf("No file path.");
         return 1;
     }
 
-    char* base = argv[1];
-    char* temp = malloc(strlen(base) + 2);
-    strcpy(temp, base);
+    char* base = getBaseDirectory(argv[1]);
+    char* name = getBaseName(base);
 
-    char* name = strtok(temp, "/");
-
-    while(strtok(NULL, "/") != NULL) {
-        name = strtok(NULL, "/");
-    }
-
+    
     pdir = opendir(base);
 
     if(pdir == NULL) {
-        printf("cannot open\n");
+        printf("Cannot open directory.\n");
         return 1;
     }
 
     
     /* get inital list of base subfolders */
-    Node* list = listSub(Dir, pdir, base, 1);
+    Node* list = listSubb(listSub(Dir, pdir, base, 1), base, name);
 
     Node* head = list;
 
-    /* appending base to linked list */
-    list = (Node*) malloc(sizeof(Node) + strlen(base) + strlen(name) + 2);
-    list->next = head;
-    list->directory = base;
-    list->name = name;
-    list->level = 1;
-    head = list;
-
     closedir(pdir);
 
+    
     /* skip over base folder */
     list = list->next;
 
@@ -109,6 +102,37 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
+/* gets base directory from argv */
+char* getBaseDirectory(char* arg) {
+    if(((int) arg[strlen(arg)-1]) != 47) {
+        char* tmp = arg;
+        arg = malloc(strlen(tmp) + 3);
+        strcpy(arg, tmp);
+        strcat(arg, "/");
+    }
+
+    return arg;
+}
+
+
+/* gets name of folder from base directory */
+char* getBaseName(char* base) {
+    char* temp = malloc(strlen(base) + 2);
+    strcpy(temp, base);
+    
+    char* named = temp;
+    char* res = strtok(temp, "/");
+
+    while(res != NULL) {
+        res = strtok(NULL, "/");
+        if(res != 0x0) {
+            named = res;
+        }
+    }
+
+    return named;
+}
+
 /* makes a linked list of folders */
 Node* listSub(struct dirent *Dir, DIR *pdir, char* base, int level) {
     Node* curr, *head;
@@ -146,6 +170,18 @@ Node* listSub(struct dirent *Dir, DIR *pdir, char* base, int level) {
     curr = head;
 
     return curr;
+}
+
+/* appending base to linked list */
+Node* listSubb(Node* list, char* base, char* name) {
+    Node* head = list;
+
+    list = (Node*) malloc(sizeof(Node) + strlen(base) + strlen(name) + 2);
+    list->next = head;
+    list->directory = base;
+    list->name = name;
+    list->level = 1;
+    head = list;
 }
 
 /* prints contents of base and subfolders */
